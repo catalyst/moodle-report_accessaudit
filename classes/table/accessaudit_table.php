@@ -1,0 +1,258 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Table to display Access Audit report.
+ *
+ * @package    report_accessaudit
+ * @copyright  2019 John Yao <johnyao@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+namespace report_accessaudit\table;
+
+
+defined('MOODLE_INTERNAL') || die;
+
+require_once($CFG->libdir . '/tablelib.php');
+use \core_role\privacy\provider;
+
+class accessaudit_table extends \table_sql implements \renderable {
+
+    /**
+     * A list of filters to be applied to the sql query.
+     * @var \stdClass
+     */
+    protected $filters;
+
+    /**
+     * A current page number.
+     * @var int
+     */
+    protected $page;
+
+    public function __construct($uniqueid, \moodle_url $url, $filters = array(), $download = '', $page = 0, $perpage = 100) {
+
+        parent::__construct($uniqueid);
+
+        $this->pagesize = $perpage;
+        $this->page = $page;
+        $this->filters = (object)$filters;
+
+        // Define columns in the table.
+        $this->define_table_columns();
+
+        // Define configs.
+        $this->define_table_configs($url);
+
+        // Set download status.
+        $this->is_downloading($download, 'accessaudit_accessaudit_report');
+
+    }
+
+    /**
+     * Setup the headers for the html table.
+     */
+    protected function define_table_columns() {
+        $cols = array(
+            'idnumber' => get_string('idnumber'),
+            'username' => get_string('username'),
+            'email' => get_string('email'),
+            'fullname' => get_string('fullname'),
+            'role' => get_string('role'),
+            'context' => get_string('report_context', 'report_accessaudit'),
+            'contextsystem' => get_string('report_contextsystem', 'report_accessaudit'),
+            'contextuser' => get_string('report_contextuser', 'report_accessaudit'),
+            'contextcoursecat' => get_string('report_contextcoursecat', 'report_accessaudit'),
+            'contextcourse' => get_string('report_contextcourse', 'report_accessaudit'),
+            'contextmodule' => get_string('report_contextmodule', 'report_accessaudit'),
+            'contextblock' => get_string('report_contextblock', 'report_accessaudit')
+        );
+
+        $this->define_columns(array_keys($cols));
+        $this->define_headers(array_values($cols));
+    }
+
+    /**
+     * Define table configs.
+     *
+     * @param \moodle_url $url url of the page where this table would be displayed.
+     */
+    protected function define_table_configs(\moodle_url $url) {
+        $urlparams = (array)$this->filters;
+
+        unset($urlparams['submitbutton']);
+
+        $url->params($urlparams);
+        $this->define_baseurl($url);
+
+        // Set table configs.
+        $this->collapsible(false);
+        $this->sortable(false);
+        $this->pageable(false);
+
+        $this->is_downloadable(true);
+        $this->show_download_buttons_at([TABLE_P_BOTTOM]);
+    }
+
+    /**
+     * Query the reader. Store results in the object for use by build_table.
+     *
+     * @param int $pagesize size of page for paginated displayed table.
+     * @param bool $useinitialsbar do you want to use the initials bar.
+     */
+    public function query_db($pagesize, $useinitialsbar = true) {
+        global $DB;
+
+        $offset = $pagesize * $this->page;
+        $limit = $pagesize;
+
+        list($countsql, $countparams) = $this->get_sql_and_params(true);
+        list($sql, $params) = $this->get_sql_and_params();
+
+        $total = $DB->count_records_sql($countsql, $countparams);
+
+        if ($this->is_downloading()) {
+            $users = $DB->get_records_sql($sql, $params);
+        } else {
+            $users = $DB->get_records_sql($sql, $params, $offset, $limit);
+        }
+
+        foreach ($users as $user) {
+            $data = new \stdClass();
+            $data->id = $user->id;
+            $data->idnumber = $user->idnumber;
+            $data->username = $user->username;
+            $data->email = $user->email;
+            $data->firstname = $user->firstname;
+            $data->lastname = $user->lastname;
+
+            if ($user->contextid > 0) {
+                $context = \context_helper::instance_by_id($user->contextid);
+                $contextids = explode('/', trim($context->path, '/'));
+                foreach ($contextids as $contextid) {
+                    $eachcontext = \context_helper::instance_by_id($contextid);
+                    switch ($eachcontext->contextlevel) {
+                        case CONTEXT_SYSTEM:
+                            $data->contextsystem = $eachcontext->get_context_name();
+                            break;
+                        case CONTEXT_USER:
+                            $data->contextuser = $eachcontext->get_context_name();
+                            break;
+                        case CONTEXT_COURSECAT:
+                            $data->contextcoursecat = $eachcontext->get_context_name();
+                            break;
+                        case CONTEXT_COURSE:
+                            $data->contextcourse = $eachcontext->get_context_name();
+                            break;
+                        case CONTEXT_MODULE:
+                            $data->contextmodule = $eachcontext->get_context_name();
+                            break;
+                        case CONTEXT_BLOCK:
+                            $data->contextblock = $eachcontext->get_context_name();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                $data->role = $user->shortname;
+                $data->context = $context->get_context_name();
+            } else {
+                $data->role = '-';
+                $data->context = '-';
+            }
+            $this->rawdata[] = $data;
+        }
+
+        $this->pagesize($pagesize, $total);
+
+        // Set initial bars.
+        if ($useinitialsbar) {
+            $this->initialbars($total > $pagesize);
+        }
+    }
+
+    /**
+     * Builds the complete sql .
+     *
+     * @param bool $count setting this to true, returns an sql to get count only instead of the complete data records.
+     *
+     * @return array containing sql to use and an array of params.
+     */
+    protected function get_sql_and_params($count = false) {
+        if ($count) {
+            $select = "COUNT(1)";
+        } else {
+            $select = "u.id, u.idnumber, u.firstname, u.lastname, u.username,
+            u.email, ra.contextid, r.shortname, ct.contextlevel, ct.path";
+        }
+
+        list($where, $params) = $this->get_filters_sql_and_params();
+
+        $sql = "SELECT $select FROM {user} u
+                LEFT JOIN {role_assignments} ra ON u.id = ra.userid
+                LEFT JOIN {context} ct ON ra.contextid = ct.id
+                LEFT JOIN {role} r ON ra.roleid = r.id";
+        $sql .= " WHERE $where";
+
+        // Add order by if needed.
+        if (!$count && $sqlsort = $this->get_sql_sort()) {
+            $sql .= " ORDER BY " . $sqlsort;
+        }
+
+        return array($sql, $params);
+    }
+
+    /**
+     * Builds the sql and param list needed, based on the user selected filters.
+     *
+     * @return array containing sql to use and an array of params.
+     */
+    protected function get_filters_sql_and_params() {
+        global $DB;
+
+        $filter = 'u.id IS NOT NULL';
+        $params = array();
+
+        if (!empty($this->filters->firstname)) {
+            $filter .= ' AND (' . $DB->sql_like('firstname', ':firstname', false) . ') ';
+            $params['firstname'] = '%' . $DB->sql_like_escape($this->filters->firstname) . '%';
+        }
+
+        if (!empty($this->filters->lastname)) {
+            $filter .= ' AND (' . $DB->sql_like('lastname', ':lastname', false) . ') ';
+            $params['lastname'] = '%' . $DB->sql_like_escape($this->filters->lastname) . '%';
+        }
+
+        if (!empty($this->filters->username)) {
+            $filter .= ' AND (' . $DB->sql_like('username', ':username', false) . ') ';
+            $params['username'] = '%' . $DB->sql_like_escape($this->filters->username) . '%';
+        }
+
+        return array($filter, $params);
+    }
+
+    protected function col_role($data) {
+        global $CFG;
+        $admins = explode(',', $CFG->siteadmins);
+
+        if ($data->role === '-') {
+            if (in_array($data->id, $admins)) {
+                return get_string('administrator', 'core');
+            }
+        }
+    }
+}
