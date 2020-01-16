@@ -2,8 +2,6 @@ language: php
 
 sudo: false
 
-dist: trusty
-
 addons:
   postgresql: "9.5"
 
@@ -20,17 +18,11 @@ services:
   - mysql
 
 env:
-  - DB=pgsql MOODLE_BRANCH=MOODLE_32_STABLE CI_PLUGIN=2
-  - DB=pgsql MOODLE_BRANCH=MOODLE_33_STABLE CI_PLUGIN=2
-  - DB=pgsql MOODLE_BRANCH=MOODLE_34_STABLE CI_PLUGIN=2
   - DB=pgsql MOODLE_BRANCH=MOODLE_35_STABLE CI_PLUGIN=2
   - DB=pgsql MOODLE_BRANCH=MOODLE_36_STABLE CI_PLUGIN=2
   - DB=pgsql MOODLE_BRANCH=MOODLE_37_STABLE CI_PLUGIN=2
   - DB=pgsql MOODLE_BRANCH=MOODLE_38_STABLE CI_PLUGIN=2
   - DB=pgsql MOODLE_BRANCH=master CI_PLUGIN=2
-  - DB=mysqli MOODLE_BRANCH=MOODLE_32_STABLE CI_PLUGIN=2
-  - DB=mysqli MOODLE_BRANCH=MOODLE_33_STABLE CI_PLUGIN=2
-  - DB=mysqli MOODLE_BRANCH=MOODLE_34_STABLE CI_PLUGIN=2
   - DB=mysqli MOODLE_BRANCH=MOODLE_35_STABLE CI_PLUGIN=2
   - DB=mysqli MOODLE_BRANCH=MOODLE_36_STABLE CI_PLUGIN=2
   - DB=mysqli MOODLE_BRANCH=MOODLE_37_STABLE CI_PLUGIN=2
@@ -41,29 +33,9 @@ matrix:
   exclude:
     - php: 7.1
       env: DB=mysqli MOODLE_BRANCH=master CI_PLUGIN=2
-    - php: 7.2
-      env: DB=pgsql MOODLE_BRANCH=MOODLE_32_STABLE CI_PLUGIN=2
-    - php: 7.2
-      env: DB=mysqli MOODLE_BRANCH=MOODLE_32_STABLE CI_PLUGIN=2
-    - php: 7.2
-      env: DB=mysqli MOODLE_BRANCH=MOODLE_33_STABLE CI_PLUGIN=2
-    - php: 7.2
-      env: DB=pgsql MOODLE_BRANCH=MOODLE_33_STABLE CI_PLUGIN=2
     - php: 7.1
       env: DB=pgsql MOODLE_BRANCH=master CI_PLUGIN=2
   include:
-    - php: 5.5
-      env: DB=mysqli MOODLE_BRANCH=MOODLE_29_STABLE
-    - php: 5.5
-      env: DB=mysqli MOODLE_BRANCH=MOODLE_30_STABLE
-    - php: 5.5
-      env: DB=mysqli MOODLE_BRANCH=MOODLE_31_STABLE
-    - php: 5.5
-      env: DB=pgsql MOODLE_BRANCH=MOODLE_29_STABLE
-    - php: 5.5
-      env: DB=pgsql MOODLE_BRANCH=MOODLE_30_STABLE
-    - php: 5.5
-      env: DB=pgsql MOODLE_BRANCH=MOODLE_31_STABLE
     - php: 7.3
       env: DB=mysqli MOODLE_BRANCH=MOODLE_37_STABLE CI_PLUGIN=2
     - php: 7.3

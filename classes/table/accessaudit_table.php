@@ -28,7 +28,6 @@ namespace report_accessaudit\table;
 defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->libdir . '/tablelib.php');
-use \core_role\privacy\provider;
 
 class accessaudit_table extends \table_sql implements \renderable {
 
@@ -74,12 +73,8 @@ class accessaudit_table extends \table_sql implements \renderable {
             'fullname' => get_string('fullname'),
             'role' => get_string('role'),
             'context' => get_string('report_context', 'report_accessaudit'),
-            'contextsystem' => get_string('report_contextsystem', 'report_accessaudit'),
-            'contextuser' => get_string('report_contextuser', 'report_accessaudit'),
-            'contextcoursecat' => get_string('report_contextcoursecat', 'report_accessaudit'),
-            'contextcourse' => get_string('report_contextcourse', 'report_accessaudit'),
-            'contextmodule' => get_string('report_contextmodule', 'report_accessaudit'),
-            'contextblock' => get_string('report_contextblock', 'report_accessaudit')
+            'contextpathraw' => get_string('report_contextpathraw', 'report_accessaudit'),
+            'contextpathhuman' => get_string('report_contextpathhuman', 'report_accessaudit')
         );
 
         $this->define_columns(array_keys($cols));
@@ -126,9 +121,9 @@ class accessaudit_table extends \table_sql implements \renderable {
         $total = $DB->count_records_sql($countsql, $countparams);
 
         if ($this->is_downloading()) {
-            $users = $DB->get_records_sql($sql, $params);
+            $users = $DB->get_recordset_sql($sql, $params);
         } else {
-            $users = $DB->get_records_sql($sql, $params, $offset, $limit);
+            $users = $DB->get_recordset_sql($sql, $params, $offset, $limit);
         }
 
         foreach ($users as $user) {
@@ -139,36 +134,10 @@ class accessaudit_table extends \table_sql implements \renderable {
             $data->email = $user->email;
             $data->firstname = $user->firstname;
             $data->lastname = $user->lastname;
-
             if ($user->contextid > 0) {
                 $context = \context_helper::instance_by_id($user->contextid);
-                $contextids = explode('/', trim($context->path, '/'));
-                foreach ($contextids as $contextid) {
-                    $eachcontext = \context_helper::instance_by_id($contextid);
-                    switch ($eachcontext->contextlevel) {
-                        case CONTEXT_SYSTEM:
-                            $data->contextsystem = $eachcontext->get_context_name();
-                            break;
-                        case CONTEXT_USER:
-                            $data->contextuser = $eachcontext->get_context_name();
-                            break;
-                        case CONTEXT_COURSECAT:
-                            $data->contextcoursecat = $eachcontext->get_context_name();
-                            break;
-                        case CONTEXT_COURSE:
-                            $data->contextcourse = $eachcontext->get_context_name();
-                            break;
-                        case CONTEXT_MODULE:
-                            $data->contextmodule = $eachcontext->get_context_name();
-                            break;
-                        case CONTEXT_BLOCK:
-                            $data->contextblock = $eachcontext->get_context_name();
-                            break;
-                        default:
-                            break;
-                    }
-                }
                 $data->role = $user->shortname;
+                $data->contextpathraw = $user->path;
                 $data->context = $context->get_context_name();
             } else {
                 $data->role = '-';
@@ -203,9 +172,9 @@ class accessaudit_table extends \table_sql implements \renderable {
         list($where, $params) = $this->get_filters_sql_and_params();
 
         $sql = "SELECT $select FROM {user} u
-                LEFT JOIN {role_assignments} ra ON u.id = ra.userid
-                LEFT JOIN {context} ct ON ra.contextid = ct.id
-                LEFT JOIN {role} r ON ra.roleid = r.id";
+             LEFT JOIN {role_assignments} ra ON u.id = ra.userid
+             LEFT JOIN {context} ct ON ra.contextid = ct.id
+             LEFT JOIN {role} r ON ra.roleid = r.id";
         $sql .= " WHERE $where";
 
         // Add order by if needed.
@@ -238,8 +207,8 @@ class accessaudit_table extends \table_sql implements \renderable {
         }
 
         if (!empty($this->filters->username)) {
-            $filter .= ' AND (' . $DB->sql_like('username', ':username', false) . ') ';
-            $params['username'] = '%' . $DB->sql_like_escape($this->filters->username) . '%';
+            $filter .= ' AND (username = :username) ';
+            $params['username'] = $this->filters->username;
         }
 
         return array($filter, $params);
@@ -253,6 +222,22 @@ class accessaudit_table extends \table_sql implements \renderable {
             if (in_array($data->id, $admins)) {
                 return get_string('administrator', 'core');
             }
+        } else {
+            return $data->role;
         }
+    }
+
+    protected function col_contextpathhuman($data) {
+        $contextids = explode('/', trim($data->contextpathraw, '/'));
+
+        if ($contextids[0] != null) {
+            $contextpath = array();
+            foreach ($contextids as $contextid) {
+                list($context, $course, $cm) = get_context_info_array($contextid);
+                $contextpath[] = $context->get_context_name();
+            }
+            $contextpathhuman = implode('/', $contextpath);
+        }
+        return $contextpathhuman;
     }
 }

@@ -55,10 +55,10 @@ $mform->set_data($filters);
 $table = new \report_accessaudit\table\accessaudit_table('report_table', $indexurl, $filters, $download, $page);
 
 if ($table->is_downloading()) {
-    \core\session\manager::write_close();
     echo $output->render($table);
     die();
 }
+\core\session\manager::write_close();
 
 $PAGE->navbar->add(get_string('auditreport', 'report_accessaudit'));
 

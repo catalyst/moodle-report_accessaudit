@@ -24,11 +24,7 @@
 
 $string['pluginname'] = 'Access Audit';
 $string['report_context'] = 'Context';
-$string['report_contextsystem'] = 'Context System';
-$string['report_contextuser'] = 'Context User';
-$string['report_contextcoursecat'] = 'Context Catogory';
-$string['report_contextcourse'] = 'Context Course';
-$string['report_contextmodule'] = 'Context Module';
-$string['report_contextblock'] = 'Context Block';
+$string['report_contextpathraw'] = 'Context Path (raw)';
+$string['report_contextpathhuman'] = 'Context Path (human readable)';
 $string['auditreport'] = 'Access Audit Report';
 $string['filters'] = 'Filters';
