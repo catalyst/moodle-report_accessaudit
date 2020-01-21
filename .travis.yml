@@ -54,13 +54,9 @@ before_install:
   - cd ../..
   - echo $CI_PLUGIN
   - git clone --mirror 'https://github.com/moodlehq/moodle-behat-extension.git' '/home/travis/.composer/cache/vcs/git-github.com-moodlehq-moodle-behat-extension.git/' || true
-  - if [ "$CI_PLUGIN" = 2 ]; then
-      nvm install 8.9;
-      nvm use 8.9;
-      composer create-project -n --no-dev --prefer-dist moodlerooms/moodle-plugin-ci ci ^2;
-    else
-      composer create-project -n --no-dev --prefer-dist moodlerooms/moodle-plugin-ci ci ^1;
-    fi
+  - nvm install 8.9;
+  - nvm use 8.9;
+  - composer create-project -n --no-dev --prefer-dist moodlerooms/moodle-plugin-ci ci ^2;
   - export PATH="$(cd ci/bin; pwd):$(cd ci/vendor/bin; pwd):$PATH"
 
 install:
@@ -72,14 +68,8 @@ script:
   - moodle-plugin-ci phpmd
   - moodle-plugin-ci codechecker
   - moodle-plugin-ci validate
-  - if [ "$CI_PLUGIN" = 2 ]; then
-      moodle-plugin-ci savepoints || travis_terminate 1;
-      moodle-plugin-ci mustache || travis_terminate 1;
-      moodle-plugin-ci grunt || travis_terminate 1;
-    else
-      moodle-plugin-ci csslint || travis_terminate 1;
-      moodle-plugin-ci jshint || travis_terminate 1;
-      moodle-plugin-ci shifter || travis_terminate 1;
-    fi
+  - moodle-plugin-ci savepoints || travis_terminate 1;
+  - moodle-plugin-ci mustache || travis_terminate 1;
+  - moodle-plugin-ci grunt || travis_terminate 1;
   - moodle-plugin-ci phpunit
   - moodle-plugin-ci behat

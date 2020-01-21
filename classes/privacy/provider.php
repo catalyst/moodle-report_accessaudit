@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Privacy Subsystem implementation for format_tabtopics.
+ * Privacy Subsystem implementation for report_accessaudit.
  *
  * @package    report_accessaudit
- * @copyright  2019 John Yao <johnyao@catalyst-net.au>
+ * @copyright  2020 John Yao <johnyao@catalyst-net.au>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

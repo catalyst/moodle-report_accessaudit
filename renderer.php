@@ -18,7 +18,7 @@
  * Plugin renderer.
  *
  * @package    report_accessaudit
- * @copyright  2019 John Yao <johnyao@catalyst-au.net>
+ * @copyright  2020 John Yao <johnyao@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

@@ -18,7 +18,7 @@
  * Table to display Access Audit report.
  *
  * @package    report_accessaudit
- * @copyright  2019 John Yao <johnyao@catalyst-au.net>
+ * @copyright  2020 John Yao <johnyao@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -121,29 +121,9 @@ class accessaudit_table extends \table_sql implements \renderable {
         $total = $DB->count_records_sql($countsql, $countparams);
 
         if ($this->is_downloading()) {
-            $users = $DB->get_recordset_sql($sql, $params);
+            $this->rawdata = $DB->get_recordset_sql($sql, $params);
         } else {
-            $users = $DB->get_recordset_sql($sql, $params, $offset, $limit);
-        }
-
-        foreach ($users as $user) {
-            $data = new \stdClass();
-            $data->id = $user->id;
-            $data->idnumber = $user->idnumber;
-            $data->username = $user->username;
-            $data->email = $user->email;
-            $data->firstname = $user->firstname;
-            $data->lastname = $user->lastname;
-            if ($user->contextid > 0) {
-                $context = \context_helper::instance_by_id($user->contextid);
-                $data->role = $user->shortname;
-                $data->contextpathraw = $user->path;
-                $data->context = $context->get_context_name();
-            } else {
-                $data->role = '-';
-                $data->context = '-';
-            }
-            $this->rawdata[] = $data;
+            $this->rawdata = $DB->get_recordset_sql($sql, $params, $offset, $limit);
         }
 
         $this->pagesize($pagesize, $total);
@@ -166,7 +146,7 @@ class accessaudit_table extends \table_sql implements \renderable {
             $select = "COUNT(1)";
         } else {
             $select = "u.id, u.idnumber, u.firstname, u.lastname, u.username,
-            u.email, ra.contextid, r.shortname, ct.contextlevel, ct.path";
+            u.email, ra.contextid, r.shortname, ct.contextlevel, ct.path AS contextpathraw";
         }
 
         list($where, $params) = $this->get_filters_sql_and_params();
@@ -216,14 +196,26 @@ class accessaudit_table extends \table_sql implements \renderable {
 
     protected function col_role($data) {
         global $CFG;
+
         $admins = explode(',', $CFG->siteadmins);
 
-        if ($data->role === '-') {
-            if (in_array($data->id, $admins)) {
-                return get_string('administrator', 'core');
-            }
+        if ($data->contextid > 0) {
+            return $data->shortname;
+        }
+
+        if (in_array($data->id, $admins)) {
+            return get_string('administrator', 'core');
         } else {
-            return $data->role;
+            return '-';
+        }
+    }
+
+    protected function col_context($data) {
+        if ($data->contextid > 0) {
+            $context = \context_helper::instance_by_id($data->contextid);
+            return $context->get_context_name();
+        } else {
+            return '-';
         }
     }
 
