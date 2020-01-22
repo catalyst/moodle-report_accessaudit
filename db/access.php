@@ -25,7 +25,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $capabilities = array(
     'report/accessaudit:readreport' => array(
-        'riskbitmask' => RISK_CONFIG,
+        'riskbitmask' => RISK_PERSONAL,
         'captype'      => 'read',
         'contextlevel' => CONTEXT_SYSTEM,
     ),
