@@ -34,7 +34,7 @@ class provider implements \core_privacy\report\metadata\null_provider
      *
      * @return string
      */
-    public static function get_reason() {
+    public static function get_reason() : string {
         return 'privacy:metadata';
     }
 }
