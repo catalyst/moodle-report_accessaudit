@@ -28,3 +28,4 @@ $string['report_contextpathraw'] = 'Context Path (raw)';
 $string['report_contextpathhuman'] = 'Context Path (human readable)';
 $string['auditreport'] = 'Access Audit Report';
 $string['filters'] = 'Filters';
+$string['privacy:metadata'] = 'The Access audit report does not store any personal data.';
