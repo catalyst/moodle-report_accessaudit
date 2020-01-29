@@ -142,21 +142,35 @@ class accessaudit_table extends \table_sql implements \renderable {
      * @return array containing sql to use and an array of params.
      */
     protected function get_sql_and_params($count = false) {
+        global $CFG;
+
+        $admin = get_string('administrator', 'core');
+
         if ($count) {
-            $select = "COUNT(1)";
+            $selectuser = "COUNT(1)";
+            $selectrole = "";
+            $selectadmin = "";
         } else {
-            $select = "u.id, u.idnumber, u.firstname, u.lastname, u.username,
-            u.email, ra.contextid, r.shortname, ct.contextlevel, ct.path AS contextpathraw";
+            $selectuser = ", u.id AS userid, u.idnumber, u.firstname, u.lastname, u.username, u.email";
+            $selectrole = "CONCAT(u.id, ra.id) AS id,      ra.contextid,  r.shortname AS role,       ct.contextlevel,   ct.path AS contextpathraw";
+            $selectadmin = "      CONCAT(u.id) AS id, null AS contextid,     '$admin' AS role,  null AS contextlevel,      null AS contextpathraw";
         }
 
         list($where, $params) = $this->get_filters_sql_and_params();
-
-        $sql = "SELECT $select FROM {user} u
-             LEFT JOIN {role_assignments} ra ON u.id = ra.userid
-             LEFT JOIN {context} ct ON ra.contextid = ct.id
-             LEFT JOIN {role} r ON ra.roleid = r.id";
+        $sql = "SELECT * FROM (";
+        $sql .= "SELECT $selectrole $selectuser
+                   FROM {user} u
+              LEFT JOIN {role_assignments} ra ON u.id = ra.userid
+              LEFT JOIN {context} ct ON ra.contextid = ct.id
+              LEFT JOIN {role} r ON ra.roleid = r.id";
         $sql .= " WHERE $where";
 
+        $sql .= " UNION
+
+                SELECT $selectadmin $selectuser FROM {user} u
+                WHERE u.id IN ($CFG->siteadmins)";
+
+        $sql .= ") AS temp";
         // Add order by if needed.
         if (!$count && $sqlsort = $this->get_sql_sort()) {
             $sql .= " ORDER BY " . $sqlsort;
@@ -173,7 +187,7 @@ class accessaudit_table extends \table_sql implements \renderable {
     protected function get_filters_sql_and_params() {
         global $DB;
 
-        $filter = 'u.id IS NOT NULL';
+        $filter = '1 = 1';
         $params = array();
 
         if (!empty($this->filters->firstname)) {
@@ -192,22 +206,6 @@ class accessaudit_table extends \table_sql implements \renderable {
         }
 
         return array($filter, $params);
-    }
-
-    protected function col_role($data) {
-        global $CFG;
-
-        $admins = explode(',', $CFG->siteadmins);
-
-        if ($data->contextid > 0) {
-            return $data->shortname;
-        }
-
-        if (in_array($data->id, $admins)) {
-            return get_string('administrator', 'core');
-        } else {
-            return '-';
-        }
     }
 
     protected function col_context($data) {
