@@ -147,23 +147,22 @@ class accessaudit_table extends \table_sql implements \renderable {
         $admin = get_string('administrator', 'core');
 
         if ($count) {
-            $selectuser = "COUNT(1)";
-            $selectrole = "";
-            $selectadmin = "";
+            $select = "COUNT(*)";
         } else {
-            $selectuser = ", u.id AS userid, u.idnumber, u.firstname, u.lastname, u.username, u.email";
-            $selectrole = "CONCAT(u.id, ra.id) AS id,      ra.contextid,  r.shortname AS role,       ct.contextlevel,   ct.path AS contextpathraw";
-            $selectadmin = "      CONCAT(u.id) AS id, null AS contextid,     '$admin' AS role,  null AS contextlevel,      null AS contextpathraw";
+            $select = '*';
         }
 
+        $selectuser = ", u.id AS userid, u.idnumber, u.firstname, u.lastname, u.username, u.email";
+        $selectrole = "CONCAT(u.id, ra.id) AS id,      ra.contextid,  r.shortname AS role,       ct.contextlevel,   ct.path AS contextpathraw";
+        $selectadmin = "      CONCAT(u.id) AS id, null AS contextid,     '$admin' AS role,  null AS contextlevel,      null AS contextpathraw";
+
         list($where, $params) = $this->get_filters_sql_and_params();
-        $sql = "SELECT * FROM (";
+        $sql = "SELECT $select FROM (";
         $sql .= "SELECT $selectrole $selectuser
                    FROM {user} u
               LEFT JOIN {role_assignments} ra ON u.id = ra.userid
               LEFT JOIN {context} ct ON ra.contextid = ct.id
               LEFT JOIN {role} r ON ra.roleid = r.id";
-        $sql .= " WHERE $where";
 
         $sql .= " UNION
 
@@ -171,6 +170,9 @@ class accessaudit_table extends \table_sql implements \renderable {
                 WHERE u.id IN ($CFG->siteadmins)";
 
         $sql .= ") AS temp";
+
+        $sql .= " WHERE $where";
+
         // Add order by if needed.
         if (!$count && $sqlsort = $this->get_sql_sort()) {
             $sql .= " ORDER BY " . $sqlsort;
@@ -203,6 +205,11 @@ class accessaudit_table extends \table_sql implements \renderable {
         if (!empty($this->filters->username)) {
             $filter .= ' AND (username = :username) ';
             $params['username'] = $this->filters->username;
+        }
+
+        if (!empty($this->filters->role)) {
+            $filter .= ' AND (role = :role) ';
+            $params['role'] = $this->filters->role;
         }
 
         return array($filter, $params);
