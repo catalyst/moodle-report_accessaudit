@@ -48,6 +48,7 @@ if ($data = $mform->get_data()) {
         'firstname' => optional_param('firstname', '', PARAM_TEXT),
         'lastname' => optional_param('lastname', '', PARAM_TEXT),
         'username' => optional_param('username', '', PARAM_TEXT),
+        'role' => optional_param('role', '', PARAM_TEXT),
     );
 }
 

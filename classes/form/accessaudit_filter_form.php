@@ -48,6 +48,9 @@ class accessaudit_filter_form extends \moodleform {
         $mform->addElement('text', 'username', get_string('username'));
         $mform->setType('username', PARAM_TEXT);
 
+        $mform->addElement('text', 'role', get_string('role'));
+        $mform->setType('role', PARAM_TEXT);
+
         $mform->addElement('submit', 'submitbutton', get_string('filter'));
     }
 
