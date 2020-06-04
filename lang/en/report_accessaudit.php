@@ -22,6 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['accessaudit:readreport'] = 'Read report capability';
 $string['pluginname'] = 'Access Audit';
 $string['report_context'] = 'Context';
 $string['report_contextpathraw'] = 'Context Path (raw)';
